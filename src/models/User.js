@@ -21,11 +21,11 @@ export default class User extends Model {
     },
     name: {
       type: DataTypes.STRING(255),
-      allowNull: false
+      allowNull: true
     },
     role: {
-      type: DataTypes.ENUM('admin','user'),
-      allowNull: false
+      type: DataTypes.STRING(50),
+      allowNull: true
     }
   }, {
     sequelize,

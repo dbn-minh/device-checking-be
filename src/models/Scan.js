@@ -12,7 +12,7 @@ export default class Scan extends Model {
     },
     userID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'User',
         key: 'userID'
@@ -20,8 +20,7 @@ export default class Scan extends Model {
     },
     timestamp: {
       type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      allowNull: true
     },
     location: {
       type: DataTypes.STRING(255),

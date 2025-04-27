@@ -12,7 +12,7 @@ export default class Count extends Model {
     },
     scanID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Scan',
         key: 'scanID'
@@ -20,7 +20,7 @@ export default class Count extends Model {
     },
     deviceID: {
       type: DataTypes.INTEGER,
-      allowNull: false,
+      allowNull: true,
       references: {
         model: 'Device',
         key: 'deviceID'
@@ -28,7 +28,7 @@ export default class Count extends Model {
     },
     number: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: true
     }
   }, {
     sequelize,

@@ -15,7 +15,7 @@ export default class Device extends Model {
       allowNull: false
     },
     description: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT,
       allowNull: true
     },
     coordinates: {
