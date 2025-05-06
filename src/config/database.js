@@ -8,7 +8,6 @@ const sequelize = new Sequelize(config.database, config.user, config.pass, {
   logging: false, // Tắt log query SQL nếu không cần
 });
 
-// Kiểm tra kết nối ngay khi import
 const connectDB = async () => {
   try {
     await sequelize.authenticate();

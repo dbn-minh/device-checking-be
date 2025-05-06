@@ -2,11 +2,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const config = {
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3390,
-  user: process.env.DB_USER || 'device_user',
-  pass: process.env.DB_PASS || 'device_pass',
-  database: process.env.DB_NAME || 'device_checking',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  user: process.env.DB_USER,
+  pass: process.env.DB_PASS,
+  database: process.env.DB_NAME,
   dialect: 'mysql'
 };
 
