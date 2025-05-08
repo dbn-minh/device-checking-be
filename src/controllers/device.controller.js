@@ -1,38 +1,42 @@
 import initModels from "../models/init-models.js";
 import { sequelize } from "../config/database.js";
-import User from "../models/User.js";
-import Scan from "../models/Scan.js";
-import Count from "../models/Count.js";
-let model = initModels(sequelize);
+
+const model = initModels(sequelize);
 
 export const syncDeviceData = async (req, res) => {
-  const t = await sequelize.transaction(); // Initialize the transaction (t)
+  const t = await sequelize.transaction();
   try {
     const { timestamp, location, userID, devices } = req.body;
 
     if (!timestamp || !location || !userID || !devices) {
       return res.status(400).json({ message: "Missing required fields" });
     }
+
     const incomingDate = new Date(timestamp);
 
-    // 1. Check if a scan already exists for the user and location
-    const latestScan = await Scan.findOne({
-      where: {
-        userID,
-        location,
-      },
+    // Step 1: Ensure all device names exist in Device table
+    const deviceIDs = [];
+    for (const device of devices) {
+      let existingDevice = await model.Device.findOne({ where: { deviceName: device.deviceName }, transaction: t });
+      if (!existingDevice) {
+        existingDevice = await model.Device.create({ deviceName: device.deviceName }, { transaction: t });
+      }
+      deviceIDs.push({ deviceID: existingDevice.deviceID, number: device.number });
+    }
+
+    // Step 2: Check for the latest Scan entry
+    const latestScan = await model.Scan.findOne({
+      where: { userID, location },
       order: [["timestamp", "DESC"]],
       transaction: t
     });
+
     let scan;
     if (!latestScan) {
-      // 2. If no scan exists, create a new scan
-      scan = await Scan.create({ userID, timestamp, location }, { transaction: t });
-
+      // No scan exists, create a new one
+      scan = await model.Scan.create({ userID, timestamp, location }, { transaction: t });
     } else {
-      // 3. If a scan exists, check the date
       const latestDate = new Date(latestScan.timestamp);
-
       const isSameDay = (
         latestDate.getFullYear() === incomingDate.getFullYear() &&
         latestDate.getMonth() === incomingDate.getMonth() &&
@@ -40,31 +44,27 @@ export const syncDeviceData = async (req, res) => {
       );
 
       if (isSameDay) {
-        // 3.1. If it's the same day, delete the old counts and insert the new ones
-        await Count.destroy({ where: { scanID: latestScan.scanID }, transaction: t });
-
+        // Same day: overwrite
+        await model.Count.destroy({ where: { scanID: latestScan.scanID }, transaction: t });
         scan = latestScan;
-        // Optionally, update the timestamp if needed
         await scan.update({ timestamp }, { transaction: t });
-
       } else {
-        // 3.2. If it's a different day, create a new scan
-        scan = await Scan.create({ userID, timestamp, location }, { transaction: t });
+        // Different day: create new scan
+        scan = await model.Scan.create({ userID, timestamp, location }, { transaction: t });
       }
     }
 
-    // 4. Insert the new devices
-    const countRows = devices.map(device => ({
+    // Step 3: Fill the Count table
+    const countRows = deviceIDs.map(d => ({
       scanID: scan.scanID,
-      deviceID: device.deviceID,
-      number: device.number
+      deviceID: d.deviceID,
+      number: d.number
     }));
 
-    await Count.bulkCreate(countRows, { transaction: t });
+    await model.Count.bulkCreate(countRows, { transaction: t });
 
     await t.commit();
     res.status(200).json({ message: "Synced successfully", scanID: scan.scanID });
-
   } catch (err) {
     console.error(err);
     await t.rollback();
