@@ -14,6 +14,7 @@ export const syncDeviceData = async (req, res) => {
     }
 
     const incomingDate = new Date(timestamp);
+    console.log(incomingDate)
 
     // Step 1: Ensure all device names exist in Device table
     const deviceIDs = [];
@@ -32,16 +33,27 @@ export const syncDeviceData = async (req, res) => {
       transaction: t
     });
 
+    console.log(latestScan)
+
     let scan;
     if (!latestScan) {
       // No scan exists, create a new one
       scan = await model.Scan.create({ userID, timestamp, location }, { transaction: t });
     } else {
       const latestDate = new Date(latestScan.timestamp);
+
+      // Require incoming timestamp to be later than existing
+      if (incomingDate <= latestDate) {
+        await t.rollback();
+        return res.status(400).json({
+          message: "Incoming timestamp must be later than the latest recorded scan."
+        });
+      }
+
       const isSameDay = (
-        latestDate.getFullYear() === incomingDate.getFullYear() &&
-        latestDate.getMonth() === incomingDate.getMonth() &&
-        latestDate.getDate() === incomingDate.getDate()
+        latestDate.getUTCFullYear() === incomingDate.getUTCFullYear() &&
+        latestDate.getUTCMonth() === incomingDate.getUTCMonth() &&
+        latestDate.getUTCDate() === incomingDate.getUTCDate()
       );
 
       if (isSameDay) {
@@ -66,6 +78,7 @@ export const syncDeviceData = async (req, res) => {
 
     await t.commit();
     res.status(200).json({ message: "Synced successfully", scanID: scan.scanID });
+
   } catch (err) {
     console.error(err);
     await t.rollback();
