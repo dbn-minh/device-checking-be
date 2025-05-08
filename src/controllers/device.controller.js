@@ -5,6 +5,7 @@ import Scan from "../models/Scan.js";
 import Count from "../models/Count.js";
 let model = initModels(sequelize);
 
+
 export const syncDeviceData = async (req, res) => {
   const t = await sequelize.transaction(); // Initialize the transaction (t)
   try {
@@ -71,3 +72,4 @@ export const syncDeviceData = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
